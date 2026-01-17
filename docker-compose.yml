@@ -1,0 +1,102 @@
+version: '3.8'
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=https://center.olmodesign.es/api
+        - VITE_WS_URL=wss://center.olmodesign.es
+    container_name: vps-center-frontend
+    restart: unless-stopped
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.vps-center.rule: Host(`center.olmodesign.es`)
+      traefik.http.routers.vps-center.entrypoints: websecure
+      traefik.http.routers.vps-center.tls.certresolver: letsencrypt
+      traefik.http.routers.vps-center.priority: "1"
+      traefik.http.services.vps-center.loadbalancer.server.port: "80"
+      traefik.docker.network: n8n_network
+    depends_on:
+      - backend
+    networks:
+      - vps-internal
+      - n8n_network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: vps-center-backend
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=3100
+      - HOST=0.0.0.0
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      - JWT_ACCESS_EXPIRY=15m
+      - JWT_REFRESH_EXPIRY=7d
+      - TOTP_ISSUER=VPS-Center
+      - BCRYPT_ROUNDS=12
+      - CORS_ORIGIN=https://center.olmodesign.es
+      - RATE_LIMIT_WINDOW_MS=900000
+      - RATE_LIMIT_MAX_REQUESTS=100
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:3100/api/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 5s
+      retries: 3
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.vps-center-api.rule: Host(`center.olmodesign.es`) && PathPrefix(`/api`)
+      traefik.http.routers.vps-center-api.entrypoints: websecure
+      traefik.http.routers.vps-center-api.tls.certresolver: letsencrypt
+      traefik.http.routers.vps-center-api.priority: "100"
+      traefik.http.routers.vps-center-api.service: vps-center-backend
+      traefik.http.routers.vps-center-ws.rule: Host(`center.olmodesign.es`) && PathPrefix(`/socket.io`)
+      traefik.http.routers.vps-center-ws.entrypoints: websecure
+      traefik.http.routers.vps-center-ws.tls.certresolver: letsencrypt
+      traefik.http.routers.vps-center-ws.priority: "100"
+      traefik.http.routers.vps-center-ws.service: vps-center-backend
+      traefik.http.services.vps-center-backend.loadbalancer.server.port: "3100"
+      traefik.docker.network: n8n_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - vps-internal
+      - n8n_network
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: vps-center-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - vps-internal
+
+networks:
+  vps-internal:
+    driver: bridge
+  n8n_network:
+    external: true
+
+volumes:
+  postgres_data:
