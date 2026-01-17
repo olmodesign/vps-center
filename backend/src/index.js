@@ -13,6 +13,7 @@ import { apiLimiter } from './middleware/rateLimiter.js';
 import authRoutes from './modules/auth/auth.routes.js';
 import projectsRoutes from './modules/projects/projects.routes.js';
 import containersRoutes from './modules/containers/containers.routes.js';
+import monitoringRoutes from './modules/monitoring/monitoring.routes.js';
 
 const app = express();
 const httpServer = createServer(app);
@@ -26,7 +27,6 @@ app.use(cors({ origin: config.corsOrigin, credentials: true, methods: ['GET', 'P
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use('/api', apiLimiter);
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -38,6 +38,11 @@ app.get('/api/health', (req, res) => {
   res.json({ success: true, status: 'healthy', timestamp: new Date().toISOString() });
 });
 
+// Monitoring sin rate limit (hace muchas requests)
+app.use('/api/monitoring', monitoringRoutes);
+
+// Resto de rutas con rate limit
+app.use('/api', apiLimiter);
 app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectsRoutes);
 app.use('/api/containers', containersRoutes);

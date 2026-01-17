@@ -6,8 +6,8 @@ import Dashboard from './pages/Dashboard';
 import Projects from './pages/Projects';
 import ProjectDetail from './pages/ProjectDetail';
 import Containers from './pages/Containers';
+import Monitoring from './pages/Monitoring';
 import Settings from './pages/Settings';
-import Terminal from './pages/Terminal';
 import MainLayout from './components/layout/MainLayout';
 import LoadingScreen from './components/ui/LoadingScreen';
 
@@ -37,7 +37,7 @@ function App() {
         <Route path="projects" element={<Projects />} />
         <Route path="projects/:name" element={<ProjectDetail />} />
         <Route path="containers" element={<Containers />} />
-        <Route path="terminal" element={<Terminal />} />
+        <Route path="monitoring" element={<Monitoring />} />
         <Route path="settings" element={<Settings />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

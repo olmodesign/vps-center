@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, FolderKanban, Container, Settings, LogOut, Terminal, Menu } from 'lucide-react';
+import { LayoutDashboard, FolderKanban, Container, Settings, LogOut, Terminal, Menu, Activity } from 'lucide-react';
 import useAuthStore from '../../hooks/useAuth';
 
 const navItems = [
   { path: '/', icon: LayoutDashboard, label: 'Dashboard', exact: true },
   { path: '/projects', icon: FolderKanban, label: 'Projects' },
   { path: '/containers', icon: Container, label: 'Containers' },
-  { path: '/terminal', icon: Terminal, label: 'Terminal' },
+  { path: '/monitoring', icon: Activity, label: 'Monitoring' },
   { path: '/settings', icon: Settings, label: 'Settings' },
 ];
 
