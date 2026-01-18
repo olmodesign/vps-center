@@ -1,0 +1,47 @@
+# ============================================
+# {{PROJECT_NAME}} - Docker Compose Base
+# ============================================
+# Usar con docker-compose.dev.yml o docker-compose.prod.yml
+# ============================================
+
+version: '3.8'
+
+services:
+  frontend:
+    container_name: ${PROJECT_NAME}-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+
+  backend:
+    container_name: ${PROJECT_NAME}-backend
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: ${PROJECT_NAME}-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+    name: ${PROJECT_NAME}-postgres-data

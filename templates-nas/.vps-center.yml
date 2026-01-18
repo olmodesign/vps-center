@@ -1,0 +1,77 @@
+# ============================================
+# VPS CENTER - Configuración de Proyecto
+# ============================================
+
+version: 1
+
+project:
+  name: "{{PROJECT_DISPLAY_NAME}}"
+  description: "{{PROJECT_DESCRIPTION}}"
+  status: development
+  created: "{{DATE}}"
+  maintainer: "oscar@olmodesign.es"
+
+stack:
+  - name: Node.js
+    version: "20"
+  - name: PostgreSQL
+    version: "16"
+  - name: React
+    version: "18"
+  - name: Nginx
+    version: "alpine"
+
+urls:
+  production: "https://{{DOMAIN}}"
+  api: "https://{{DOMAIN}}/api"
+  health: "https://{{DOMAIN}}/api/health"
+
+repository:
+  url: "{{REPO_URL}}"
+  branch: "main"
+
+ports:
+  - port: 80
+    type: internal
+    service: frontend
+    description: "Frontend Nginx"
+  - port: 3000
+    type: internal
+    service: backend
+    description: "API REST"
+  - port: 5432
+    type: internal
+    service: database
+    description: "PostgreSQL"
+
+containers:
+  - name: "{{PROJECT_NAME}}-frontend"
+    service: frontend
+  - name: "{{PROJECT_NAME}}-backend"
+    service: backend
+  - name: "{{PROJECT_NAME}}-postgres"
+    service: database
+
+volumes:
+  - name: postgres_data
+    description: "Datos de PostgreSQL"
+    backup: true
+  - name: uploads
+    description: "Archivos subidos"
+    backup: true
+
+traefik:
+  network: n8n_network
+  entrypoint: websecure
+  certresolver: letsencrypt
+
+healthcheck:
+  endpoint: /api/health
+  interval: 30s
+  timeout: 10s
+  retries: 3
+
+backup:
+  enabled: true
+  schedule: "0 3 * * *"
+  retention: 7

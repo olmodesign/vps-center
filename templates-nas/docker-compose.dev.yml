@@ -1,0 +1,50 @@
+# ============================================
+# {{PROJECT_NAME}} - Desarrollo (NAS)
+# ============================================
+# Uso: docker compose -f docker-compose.yml -f docker-compose.dev.yml --env-file .env.dev up -d
+# ============================================
+
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "${DEV_FRONTEND_PORT:-3000}:3000"
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - VITE_API_URL=http://localhost:${DEV_BACKEND_PORT:-3001}/api
+    networks:
+      - dev-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "${DEV_BACKEND_PORT:-3001}:3000"
+    volumes:
+      - ./backend/src:/app/src
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - LOG_LEVEL=debug
+    networks:
+      - dev-network
+
+  postgres:
+    ports:
+      - "${DEV_DB_PORT:-5432}:5432"
+    networks:
+      - dev-network
+
+networks:
+  dev-network:
+    driver: bridge
+    name: ${PROJECT_NAME}-dev

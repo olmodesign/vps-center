@@ -1,0 +1,62 @@
+# ============================================
+# {{PROJECT_NAME}} - Producción (VPS)
+# ============================================
+# Uso: docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod up -d
+# ============================================
+
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${PROJECT_NAME}.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.${PROJECT_NAME}.entrypoints=websecure"
+      - "traefik.http.routers.${PROJECT_NAME}.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.${PROJECT_NAME}.priority=1"
+      - "traefik.http.services.${PROJECT_NAME}.loadbalancer.server.port=80"
+      - "traefik.docker.network=${TRAEFIK_NETWORK}"
+      - "vps-center.project=${PROJECT_NAME}"
+      - "vps-center.service=frontend"
+    networks:
+      - internal
+      - ${TRAEFIK_NETWORK}
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      - NODE_ENV=production
+      - LOG_LEVEL=info
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${PROJECT_NAME}-api.rule=Host(`${DOMAIN}`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.${PROJECT_NAME}-api.entrypoints=websecure"
+      - "traefik.http.routers.${PROJECT_NAME}-api.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.${PROJECT_NAME}-api.priority=100"
+      - "traefik.http.services.${PROJECT_NAME}-api.loadbalancer.server.port=3000"
+      - "traefik.docker.network=${TRAEFIK_NETWORK}"
+      - "vps-center.project=${PROJECT_NAME}"
+      - "vps-center.service=backend"
+    networks:
+      - internal
+      - ${TRAEFIK_NETWORK}
+
+  postgres:
+    labels:
+      - "vps-center.project=${PROJECT_NAME}"
+      - "vps-center.service=database"
+    networks:
+      - internal
+
+networks:
+  internal:
+    driver: bridge
+    name: ${PROJECT_NAME}-internal
+  n8n_network:
+    external: true
+
