@@ -1,0 +1,39 @@
+http:
+  routers:
+    vps-center-api:
+      rule: "Host(`center.olmodesign.es`) && PathPrefix(`/api`)"
+      entryPoints:
+        - websecure
+      service: vps-center-backend
+      tls:
+        certResolver: letsencrypt
+      priority: 100
+
+    vps-center-ws:
+      rule: "Host(`center.olmodesign.es`) && PathPrefix(`/socket.io`)"
+      entryPoints:
+        - websecure
+      service: vps-center-backend
+      tls:
+        certResolver: letsencrypt
+      priority: 100
+
+    vps-center-frontend:
+      rule: "Host(`center.olmodesign.es`)"
+      entryPoints:
+        - websecure
+      service: vps-center-frontend
+      tls:
+        certResolver: letsencrypt
+      priority: 1
+
+  services:
+    vps-center-backend:
+      loadBalancer:
+        servers:
+          - url: "http://vps-center-backend:3100"
+
+    vps-center-frontend:
+      loadBalancer:
+        servers:
+          - url: "http://vps-center-frontend:80"

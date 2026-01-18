@@ -121,3 +121,13 @@ export const containersApi = {
 };
 
 export default api;
+
+export const traefikApi = {
+  getOverview: () => api.get('/traefik/overview'),
+  getRouters: () => api.get('/traefik/routers'),
+  getServices: () => api.get('/traefik/services'),
+  getMiddlewares: () => api.get('/traefik/middlewares'),
+  getEntrypoints: () => api.get('/traefik/entrypoints'),
+  getCertificates: () => api.get('/traefik/certificates'),
+  healthCheck: () => api.get('/traefik/health'),
+};

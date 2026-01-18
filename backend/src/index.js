@@ -14,6 +14,7 @@ import authRoutes from './modules/auth/auth.routes.js';
 import projectsRoutes from './modules/projects/projects.routes.js';
 import containersRoutes from './modules/containers/containers.routes.js';
 import monitoringRoutes from './modules/monitoring/monitoring.routes.js';
+import traefikRoutes from './modules/traefik/traefik.routes.js';
 
 const app = express();
 const httpServer = createServer(app);
@@ -46,6 +47,7 @@ app.use('/api', apiLimiter);
 app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectsRoutes);
 app.use('/api/containers', containersRoutes);
+app.use('/api/traefik', traefikRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

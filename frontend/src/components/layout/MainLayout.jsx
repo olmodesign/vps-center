@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, FolderKanban, Container, Settings, LogOut, Terminal, Menu, Activity } from 'lucide-react';
+import { LayoutDashboard, FolderKanban, Container, Settings, LogOut, Terminal, Menu, Activity, Network } from 'lucide-react';
 import useAuthStore from '../../hooks/useAuth';
 
 const navItems = [
@@ -8,6 +8,7 @@ const navItems = [
   { path: '/projects', icon: FolderKanban, label: 'Projects' },
   { path: '/containers', icon: Container, label: 'Containers' },
   { path: '/monitoring', icon: Activity, label: 'Monitoring' },
+  { path: '/traefik', icon: Network, label: 'Traefik' },
   { path: '/settings', icon: Settings, label: 'Settings' },
 ];
 

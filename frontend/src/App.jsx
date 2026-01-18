@@ -8,6 +8,7 @@ import ProjectDetail from './pages/ProjectDetail';
 import Containers from './pages/Containers';
 import Monitoring from './pages/Monitoring';
 import Settings from './pages/Settings';
+import Traefik from './pages/Traefik';
 import MainLayout from './components/layout/MainLayout';
 import LoadingScreen from './components/ui/LoadingScreen';
 
@@ -39,6 +40,7 @@ function App() {
         <Route path="containers" element={<Containers />} />
         <Route path="monitoring" element={<Monitoring />} />
         <Route path="settings" element={<Settings />} />
+        <Route path="traefik" element={<Traefik />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
