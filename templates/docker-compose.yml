@@ -1,0 +1,121 @@
+# ============================================
+# {{PROJECT_NAME}} - Docker Compose
+# ============================================
+# Generado para VPS Center
+# Reemplazar {{VARIABLES}} antes de usar
+# ============================================
+
+version: '3.8'
+
+services:
+  # ==========================================
+  # FRONTEND
+  # ==========================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=/api
+    container_name: ${PROJECT_NAME}-frontend
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${PROJECT_NAME}.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.${PROJECT_NAME}.entrypoints=websecure"
+      - "traefik.http.routers.${PROJECT_NAME}.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.${PROJECT_NAME}.priority=1"
+      - "traefik.http.services.${PROJECT_NAME}.loadbalancer.server.port=80"
+      - "traefik.docker.network=${TRAEFIK_NETWORK}"
+      - "vps-center.project=${PROJECT_NAME}"
+      - "vps-center.service=frontend"
+    depends_on:
+      - backend
+    networks:
+      - internal
+      - ${TRAEFIK_NETWORK}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ==========================================
+  # BACKEND
+  # ==========================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ${PROJECT_NAME}-backend
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=${BACKEND_PORT:-3000}
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    volumes:
+      - uploads:/app/uploads
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${PROJECT_NAME}-api.rule=Host(`${DOMAIN}`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.${PROJECT_NAME}-api.entrypoints=websecure"
+      - "traefik.http.routers.${PROJECT_NAME}-api.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.${PROJECT_NAME}-api.priority=100"
+      - "traefik.http.services.${PROJECT_NAME}-api.loadbalancer.server.port=${BACKEND_PORT:-3000}"
+      - "traefik.docker.network=${TRAEFIK_NETWORK}"
+      - "vps-center.project=${PROJECT_NAME}"
+      - "vps-center.service=backend"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - internal
+      - ${TRAEFIK_NETWORK}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${BACKEND_PORT:-3000}/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ==========================================
+  # DATABASE
+  # ==========================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: ${PROJECT_NAME}-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    labels:
+      - "vps-center.project=${PROJECT_NAME}"
+      - "vps-center.service=database"
+      - "vps-center.database.type=postgresql"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - internal
+
+networks:
+  internal:
+    driver: bridge
+    name: ${PROJECT_NAME}-internal
+  n8n_network:
+    external: true
+
+volumes:
+  postgres_data:
+    name: ${PROJECT_NAME}-postgres-data
+  uploads:
+    name: ${PROJECT_NAME}-uploads
